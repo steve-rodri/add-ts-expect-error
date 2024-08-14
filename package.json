@@ -1,0 +1,23 @@
+{
+  "name": "add-ts-expect-error",
+  "version": "1.0.0",
+  "main": "main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsx main.ts
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "prettier": {
+    "semi": false
+  },
+  "devDependencies": {
+    "@types/node": "^22.2.0",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "ts-morph": "^23.0.0"
+  }
+}
