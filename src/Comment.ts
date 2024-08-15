@@ -58,7 +58,7 @@ export class Comment {
     if (!this.text) return false
     const line = lines[this.lineNum]
     const beginningOfText = this.text.trim().slice(0, 3)
-    return line.trim().startsWith(beginningOfText) || false
+    return line?.trim().startsWith(beginningOfText) || false
   }
 
   public getLineNum(): number {
