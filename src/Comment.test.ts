@@ -16,7 +16,7 @@ const createMockSourceFile = (kind: SyntaxKind) => {
   } as unknown as SourceFile
 }
 
-const lineNum = 0
+const lineNum = 2
 const lineDiagnostics = [createMockDiagnostic()]
 
 it("should instantiate correctly", () => {
