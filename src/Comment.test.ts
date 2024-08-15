@@ -2,6 +2,29 @@ import { Project, Diagnostic, SourceFile } from "ts-morph"
 import { Comment } from "./Comment"
 import { jsxCode } from "./__mocks__/jsx"
 
+// FIX: Not working correctly between JSX attributes
+
+//   664 |                 disabled={true}
+// > 665 | {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
+//       |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//   666 |                 onChange={null}
+
+// FIX: Not working correctly between JSX elements
+
+// TS2339: Property 'coach' does not exist on type 'never'.
+//      97 |                   <dt className="text-3xl truncate font-medium text-blue-900 underline">
+//      98 | // @ts-expect-error: Property 'coach' does not exist on type 'never'.
+//   >  99 |                     <a href={coach.coach.meetingsUrl} target="_blank">
+//                                               ^^^
+
+// FIX: Issues with type declarations
+
+// TS2578: Unused '@ts-expect-error' directive.
+//     1 | import React from "react"
+//     2 | import "./profile.module.scss"
+//   > 3 | // @ts-expect-error: Cannot find module '../../../assets/img/team-2-800x800.jpg' or its corresponding type declarations.
+//       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 vi.mock("./utils", () => ({
   stringifyDiagnosticMessage: (msg: any) =>
     typeof msg === "string" ? msg : msg.getMessageText(),
