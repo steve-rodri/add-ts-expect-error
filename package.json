@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "type": "module",
+  "author": "Steve Rodriguez",
+  "license": "ISC",
+  "description": "",
   "bin": {
     "add-ts-expect-error": "dist/main"
   },
@@ -12,19 +15,15 @@
     "start": "npx tsx src/index.ts",
     "build": "bun build ./src/index.ts --compile --outfile ./dist/main"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steve-rodri/add-ts-expect-error.git"
+  },
   "keywords": [
     "ts-migrate",
     "ts-ignore",
     "ts-expect-error"
   ],
-  "author": "Steve Rodriguez",
-  "license": "ISC",
-  "description": "",
-  "prettier": {
-    "semi": false
-  },
   "devDependencies": {
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^22.2.0",
@@ -37,5 +36,8 @@
   },
   "dependencies": {
     "ts-morph": "^23.0.0"
+  },
+  "prettier": {
+    "semi": false
   }
 }
