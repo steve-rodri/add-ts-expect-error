@@ -18,7 +18,7 @@ beforeEach(() => {
   mockSourceFile = {
     getFilePath: vi.fn().mockReturnValue("test.ts"),
     getPreEmitDiagnostics: vi.fn().mockReturnValue([]),
-    getLineAndColumnAtPos: vi.fn().mockReturnValue({ line: 1, column: 1 }),
+    getLineAndColumnAtPos: vi.fn().mockReturnValue({ line: 2 }),
   }
 })
 
@@ -45,11 +45,11 @@ it("should group diagnostics by line", () => {
 
 it("should generate new content with comments", () => {
   const diagnostics: Partial<Diagnostic>[] = [
-    { getStart: vi.fn().mockReturnValue(1) },
+    { getStart: vi.fn().mockReturnValue(2) },
   ]
   mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
   ;(Comment as Mock).mockImplementation(() => ({
-    getLineNum: vi.fn().mockReturnValue(0),
+    getLineNum: vi.fn().mockReturnValue(1),
     getText: vi.fn().mockReturnValue("// @ts-expect-error"),
     hasTextAndAlreadyExists: vi.fn().mockReturnValue(false),
   }))
