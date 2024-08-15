@@ -1,4 +1,4 @@
-import { Diagnostic, SourceFile, SyntaxKind } from "ts-morph"
+import { Diagnostic, Node, SourceFile, SyntaxKind } from "ts-morph"
 
 import { stringifyDiagnosticMessage } from "./utils"
 
@@ -43,15 +43,73 @@ export class Comment {
       : diagnosticMessages[0]
   }
 
-  private checkIfInJSX(startPosition?: number) {
-    if (!startPosition) return
+  private checkIfInJSX(startPosition?: number): boolean {
+    if (startPosition === undefined) return false // Handle undefined or null startPosition properly
     const node = this.sourceFile.getDescendantAtPos(startPosition)
     if (!node) return false
-    const kind = node.getKind()
-    return (
-      kind === SyntaxKind.JsxElement ||
-      kind === SyntaxKind.JsxSelfClosingElement
-    )
+
+    let current: Node | undefined = node
+    let inAttribute = false
+    const { line: startLine } =
+      this.sourceFile.getLineAndColumnAtPos(startPosition)
+
+    // Traverse up the AST to check if the node is within a JSX context
+    while (current) {
+      const kind = current.getKind()
+      const { line: currentLine } = this.sourceFile.getLineAndColumnAtPos(
+        current.getStart(),
+      )
+
+      // Continue traversing if within a JSX expression but not on the same line
+      if (kind === SyntaxKind.JsxExpression) {
+        if (currentLine === startLine) {
+          current = current.getParent()
+          continue
+        } else {
+          return false
+        }
+      }
+
+      // Check if the position is within the props of a JSX element and not on the same line
+      if (
+        kind === SyntaxKind.JsxAttribute ||
+        kind === SyntaxKind.JsxSpreadAttribute
+      ) {
+        if (currentLine === startLine) {
+          inAttribute = true
+          current = current.getParent()
+          continue
+        } else {
+          return false
+        }
+      }
+
+      if (inAttribute && kind === SyntaxKind.JsxOpeningElement) {
+        return false
+      }
+
+      // Check if the position is within a JSX element
+      if (
+        kind === SyntaxKind.JsxElement ||
+        kind === SyntaxKind.JsxSelfClosingElement ||
+        kind === SyntaxKind.JsxFragment ||
+        kind === SyntaxKind.JsxOpeningElement ||
+        kind === SyntaxKind.JsxClosingElement ||
+        kind === SyntaxKind.JsxOpeningFragment ||
+        kind === SyntaxKind.JsxClosingFragment
+      ) {
+        if (currentLine === startLine) {
+          current = current.getParent()
+          continue
+        } else {
+          return true
+        }
+      }
+
+      current = current.getParent()
+    }
+
+    return false
   }
 
   public hasTextAndAlreadyExists(lines: string[]): boolean {
