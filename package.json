@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "type": "module",
+  "bin": {
+    "add-ts-expect-error": "dist/main"
+  },
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "start": "npx tsx src/index.ts"
+    "start": "npx tsx src/index.ts",
+    "build": "bun build ./src/index.ts --compile --outfile ./dist/main"
   },
   "keywords": [],
   "author": "",
