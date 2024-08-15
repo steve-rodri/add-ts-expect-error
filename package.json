@@ -1,12 +1,12 @@
 {
   "name": "add-ts-expect-error",
   "version": "1.0.0",
-  "main": "src/main.ts",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "start": "npx tsx src/main.ts"
+    "start": "npx tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
