@@ -19,10 +19,11 @@ export class FileContent {
   private groupDiagnosticsByLine() {
     const diagnostics = this.sourceFile.getPreEmitDiagnostics()
     return diagnostics.reduce((map, diagnostic) => {
-      const lineNum = diagnostic.getStart()
-      if (!lineNum) return map
-      if (!map.has(lineNum)) map.set(lineNum, [])
-      map.get(lineNum)!.push(diagnostic)
+      const pos = diagnostic.getStart()
+      if (!pos) return map
+      const { line } = this.sourceFile.getLineAndColumnAtPos(pos)
+      if (!map.has(line)) map.set(line, [])
+      map.get(line)!.push(diagnostic)
       return map
     }, new Map<number, Diagnostic[]>())
   }
