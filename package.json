@@ -10,6 +10,12 @@
   },
   "keywords": [],
   "author": "",
+  "keywords": [
+    "ts-migrate",
+    "ts-ignore",
+    "ts-expect-error"
+  ],
+  "author": "Steve Rodriguez",
   "license": "ISC",
   "description": "",
   "prettier": {
