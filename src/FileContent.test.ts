@@ -12,69 +12,67 @@ vi.mock("./Comment", () => ({
   Comment: vi.fn(),
 }))
 
-describe("FileContent", () => {
-  let mockSourceFile: Partial<SourceFile>
+let mockSourceFile: Partial<SourceFile>
 
-  beforeEach(() => {
-    mockSourceFile = {
-      getFilePath: vi.fn().mockReturnValue("test.ts"),
-      getPreEmitDiagnostics: vi.fn().mockReturnValue([]),
-      getLineAndColumnAtPos: vi.fn().mockReturnValue({ line: 1, column: 1 }),
-    }
-  })
+beforeEach(() => {
+  mockSourceFile = {
+    getFilePath: vi.fn().mockReturnValue("test.ts"),
+    getPreEmitDiagnostics: vi.fn().mockReturnValue([]),
+    getLineAndColumnAtPos: vi.fn().mockReturnValue({ line: 1, column: 1 }),
+  }
+})
 
-  it("should initialize correctly", () => {
-    const fileContent = new FileContent(mockSourceFile as SourceFile)
-    expect(fileContent).toBeDefined()
-    expect(mockSourceFile.getFilePath).toHaveBeenCalled()
-    expect(readFile).toHaveBeenCalledWith("test.ts")
-  })
+it("should initialize correctly", () => {
+  const fileContent = new FileContent(mockSourceFile as SourceFile)
+  expect(fileContent).toBeDefined()
+  expect(mockSourceFile.getFilePath).toHaveBeenCalled()
+  expect(readFile).toHaveBeenCalledWith("test.ts")
+})
 
-  it("should group diagnostics by line", () => {
-    const diagnostics: Partial<Diagnostic>[] = [
-      { getStart: vi.fn().mockReturnValue(5) },
-      { getStart: vi.fn().mockReturnValue(15) },
-    ]
-    mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
+it("should group diagnostics by line", () => {
+  const diagnostics: Partial<Diagnostic>[] = [
+    { getStart: vi.fn().mockReturnValue(1) },
+    { getStart: vi.fn().mockReturnValue(2) },
+  ]
+  mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
 
-    const fileContent = new FileContent(mockSourceFile as SourceFile)
-    const groupedDiagnostics = fileContent["diagnosticsByLine"]
+  const fileContent = new FileContent(mockSourceFile as SourceFile)
+  const groupedDiagnostics = fileContent["diagnosticsByLine"]
 
-    expect(groupedDiagnostics[1].length).toBe(1)
-    expect(groupedDiagnostics[2].length).toBe(1)
-  })
+  expect(groupedDiagnostics.get(1)!.length).toBe(1)
+  expect(groupedDiagnostics.get(2)!.length).toBe(1)
+})
 
-  it("should generate new content with comments", () => {
-    const diagnostics: Partial<Diagnostic>[] = [
-      { getStart: vi.fn().mockReturnValue(5) },
-    ]
-    mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
-    ;(Comment as Mock).mockImplementation(() => ({
-      getLineNum: vi.fn().mockReturnValue(1),
-      getText: vi.fn().mockReturnValue("// @ts-expect-error"),
-      hasTextAndAlreadyExists: vi.fn().mockReturnValue(false),
-    }))
+it("should generate new content with comments", () => {
+  const diagnostics: Partial<Diagnostic>[] = [
+    { getStart: vi.fn().mockReturnValue(1) },
+  ]
+  mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
+  ;(Comment as Mock).mockImplementation(() => ({
+    getLineNum: vi.fn().mockReturnValue(0),
+    getText: vi.fn().mockReturnValue("// @ts-expect-error"),
+    hasTextAndAlreadyExists: vi.fn().mockReturnValue(false),
+  }))
 
-    const fileContent = new FileContent(mockSourceFile as SourceFile)
-    const result = fileContent.generate()
+  const fileContent = new FileContent(mockSourceFile as SourceFile)
+  const result = fileContent.generate()
 
-    expect(result).toContain("// @ts-expect-error")
-  })
+  expect(result).toContain("// @ts-expect-error")
+})
 
-  it("should not insert duplicate comments", () => {
-    const diagnostics: Partial<Diagnostic>[] = [
-      { getStart: vi.fn().mockReturnValue(5) },
-    ]
-    mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
-    ;(Comment as Mock).mockImplementation(() => ({
-      getLineNum: vi.fn().mockReturnValue(1),
-      getText: vi.fn().mockReturnValue("// @ts-expect-error"),
-      hasTextAndAlreadyExists: vi.fn().mockReturnValue(true),
-    }))
+it("should not insert duplicate comments", () => {
+  const diagnostics: Partial<Diagnostic>[] = [
+    { getStart: vi.fn().mockReturnValue(1) },
+  ]
+  mockSourceFile.getPreEmitDiagnostics = vi.fn().mockReturnValue(diagnostics)
+  ;(Comment as Mock).mockImplementation(() => ({
+    getLineNum: vi.fn().mockReturnValue(1),
+    getText: vi.fn().mockReturnValue("// @ts-expect-error"),
+    hasTextAndAlreadyExists: vi.fn().mockReturnValue(true),
+  }))
 
-    const fileContent = new FileContent(mockSourceFile as SourceFile)
-    const result = fileContent.generate()
+  const fileContent = new FileContent(mockSourceFile as SourceFile)
+  const result = fileContent.generate()
 
-    expect(result).not.toContain("// @ts-expect-error")
-  })
+  expect(result).not.toContain("// @ts-expect-error")
 })

@@ -3,11 +3,9 @@ import { Diagnostic, SourceFile } from "ts-morph"
 import { Comment } from "./Comment"
 import { readFile } from "./utils"
 
-type DiagnosticsByLine = Record<string, Diagnostic[]>
-
 export class FileContent {
   private readonly sourceFile: SourceFile
-  private readonly diagnosticsByLine: DiagnosticsByLine
+  private readonly diagnosticsByLine: Map<number, Diagnostic[]>
   private lines: string[]
   private newLineAddedOffset: number
 
@@ -20,14 +18,13 @@ export class FileContent {
 
   private groupDiagnosticsByLine() {
     const diagnostics = this.sourceFile.getPreEmitDiagnostics()
-    return diagnostics.reduce((diagnosticsByLine, diagnostic) => {
-      const start = diagnostic.getStart()
-      if (!start) return diagnosticsByLine
-      const { line } = this.sourceFile.getLineAndColumnAtPos(start)
-      if (!diagnosticsByLine[line]) diagnosticsByLine[line] = []
-      diagnosticsByLine[line].push(diagnostic)
-      return diagnosticsByLine
-    }, {} as DiagnosticsByLine)
+    return diagnostics.reduce((map, diagnostic) => {
+      const lineNum = diagnostic.getStart()
+      if (!lineNum) return map
+      if (!map.has(lineNum)) map.set(lineNum, [])
+      map.get(lineNum)!.push(diagnostic)
+      return map
+    }, new Map<number, Diagnostic[]>())
   }
 
   private getLines(): string[] {
@@ -37,9 +34,7 @@ export class FileContent {
   }
 
   private getSortedDiagLineNums(): number[] {
-    return Object.keys(this.diagnosticsByLine)
-      .sort((a, b) => parseInt(a) - parseInt(b))
-      .map(Number)
+    return Array.from(this.diagnosticsByLine.keys()).sort((a, b) => a - b)
   }
 
   private insertComment(comment: Comment) {
@@ -49,7 +44,7 @@ export class FileContent {
 
   private createComment(diagnosticLineNum: number) {
     const lineNum = diagnosticLineNum + this.newLineAddedOffset - 1
-    const lineDiagnostics = this.diagnosticsByLine[diagnosticLineNum]
+    const lineDiagnostics = this.diagnosticsByLine.get(diagnosticLineNum)!
     const sourceFile = this.sourceFile
     return new Comment({ lineNum, lineDiagnostics, sourceFile })
   }
