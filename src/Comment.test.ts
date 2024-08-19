@@ -106,8 +106,8 @@ it("should handle multiple diagnostics", () => {
 
 describe("JSX Errors", () => {
   it("should generate a comment in an attribute correctly", () => {
+    // Arrange
     const errorMessage = "This is a JSX error message in an attribute"
-
     const diagnostic = createDiagnostic(
       sourceFile,
       jsxCode.indexOf("some-class"),
@@ -118,9 +118,12 @@ describe("JSX Errors", () => {
       lineDiagnostics: [diagnostic],
       sourceFile,
     })
+
+    // Act
     const text = comment.getText()
     const result = createCommentText(errorMessage)
 
+    // Assert
     expect(text).toBe(result)
   })
 
