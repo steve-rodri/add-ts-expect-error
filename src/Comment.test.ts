@@ -112,9 +112,10 @@ describe("JSX Errors", () => {
   it("should generate a comment in an attribute correctly", () => {
     // Arrange
     const errorMessage = "This is a JSX error message in an attribute"
+    const index = jsxCode.indexOf("some-class")
     const diagnostic = createDiagnostic(
       sourceFile,
-      jsxCode.indexOf("some-class"),
+      index,
       errorMessage
     )
     const comment = new Comment({
