@@ -33,7 +33,7 @@ vi.mock("./utils", () => ({
 const createDiagnostic = (
   sourceFile: SourceFile,
   start: number,
-  messageText: string,
+  messageText: string
 ): Diagnostic => {
   return {
     getStart: () => start,
@@ -61,7 +61,7 @@ it("should generate a comment for a non-JSX error", () => {
   const diagnostic = createDiagnostic(
     sourceFile,
     jsxCode.indexOf("console.log"),
-    errorMessage,
+    errorMessage
   )
   const comment = new Comment({
     lineNum: 5,
@@ -86,12 +86,12 @@ it("should handle multiple diagnostics", () => {
   const diagnostic1 = createDiagnostic(
     sourceFile,
     jsxCode.indexOf("console.log"),
-    "First error message",
+    "First error message"
   )
   const diagnostic2 = createDiagnostic(
     sourceFile,
     jsxCode.indexOf("console.log") + 5,
-    "Second error message",
+    "Second error message"
   )
   const comment = new Comment({
     lineNum: 4,
@@ -100,9 +100,13 @@ it("should handle multiple diagnostics", () => {
   })
 
   expect(comment.getText()).toBe(
-    createCommentText("Multiple errors, uncomment to see."),
+    createCommentText("Multiple errors, uncomment to see.")
   )
 })
+
+// Generate a comment for a JSX --> //
+// We get: {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
+// We want: // @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'.
 
 describe("JSX Errors", () => {
   it("should generate a comment in an attribute correctly", () => {
@@ -111,7 +115,7 @@ describe("JSX Errors", () => {
     const diagnostic = createDiagnostic(
       sourceFile,
       jsxCode.indexOf("some-class"),
-      errorMessage,
+      errorMessage
     )
     const comment = new Comment({
       lineNum: 1,
@@ -133,7 +137,7 @@ describe("JSX Errors", () => {
     const diagnostic = createDiagnostic(
       sourceFile,
       jsxCode.indexOf("Error"),
-      errorMessage,
+      errorMessage
     )
     const comment = new Comment({
       lineNum: 2,
@@ -152,7 +156,7 @@ describe("JSX Errors", () => {
     const diagnostic = createDiagnostic(
       sourceFile,
       jsxCode.indexOf("example"),
-      errorMessage,
+      errorMessage
     )
     const comment = new Comment({
       lineNum: 9,
@@ -171,7 +175,7 @@ describe("JSX Errors", () => {
     const diagnostic = createDiagnostic(
       sourceFile,
       jsxCode.indexOf("true"),
-      errorMessage,
+      errorMessage
     )
     const comment = new Comment({
       lineNum: 7,
