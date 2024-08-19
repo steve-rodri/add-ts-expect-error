@@ -1,5 +1,5 @@
 import { SourceFile } from "ts-morph"
-import { FileContent } from "./FileContent"
+import { FileContent } from "../FileContent"
 
 vi.mock("./utils", () => ({
   readFile: vi.fn().mockReturnValue("line1\nline2\nline3"),

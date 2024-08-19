@@ -1,5 +1,5 @@
 import { DiagnosticMessageChain } from "ts-morph"
-import { stringifyDiagnosticMessage } from "./stringifyDiagnosticMessage"
+import { stringifyDiagnosticMessage } from "../utils/stringifyDiagnosticMessage"
 
 const createMockDiagnosticMessageChain = (
   messageText: string,

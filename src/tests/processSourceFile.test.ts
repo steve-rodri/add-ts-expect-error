@@ -1,7 +1,7 @@
 import { SourceFile } from "ts-morph"
-import { processSourceFile } from "./processSourceFile"
+import { processSourceFile } from "../utils/processSourceFile"
 import { FileContent } from "../FileContent"
-import { writeFile } from "./file-util"
+import { writeFile } from "../utils/file-util"
 import { Mock } from "vitest"
 
 // Mocking dependencies

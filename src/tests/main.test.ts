@@ -1,8 +1,8 @@
 import { Mock } from "vitest"
 import path from "path"
 import { Project, SourceFile } from "ts-morph"
-import { main } from "./main"
-import { processSourceFile } from "./utils"
+import { main } from "../main"
+import { processSourceFile } from "../utils"
 
 vi.mock("path")
 vi.mock("ts-morph")

@@ -1,5 +1,5 @@
 import { Project, Diagnostic, SourceFile } from "ts-morph"
-import { Comment } from "./Comment"
+import { Comment } from "../Comment"
 import { jsxCode } from "./__mocks__/jsx"
 
 // FIX: Not working correctly between JSX attributes
