@@ -84,7 +84,11 @@ export class Comment {
         }
       }
 
-      if (inAttribute && kind === SyntaxKind.JsxOpeningElement) {
+      if (
+        inAttribute &&
+        (kind === SyntaxKind.JsxOpeningElement ||
+          kind === SyntaxKind.JsxSelfClosingElement)
+      ) {
         return false
       }
 
