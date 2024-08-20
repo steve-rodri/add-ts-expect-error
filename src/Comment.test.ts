@@ -1,26 +1,25 @@
-import { Project, Diagnostic, SourceFile } from "ts-morph"
+import { Project, Diagnostic, SourceFile, DiagnosticCategory } from "ts-morph"
 import { Comment } from "./Comment"
 import { jsxCode } from "./__mocks__/jsx"
 import { getPosOfNthOccurrence } from "./__mocks__/getPosOfNthOccurence"
 import { getLineNumberFromPosition } from "./__mocks__/getLineNumberFromPosition"
-
-vi.mock("./utils", () => ({
-  stringifyDiagnosticMessage: (msg: any) =>
-    typeof msg === "string" ? msg : msg.getMessageText(),
-}))
+import * as utils from "./utils"
 
 const createDiagnostic = ({
   sourceFile,
   start,
   messageText,
+  category = DiagnosticCategory.Error,
 }: {
   sourceFile: SourceFile
   start: number
   messageText: string
+  category?: DiagnosticCategory
 }): Diagnostic => {
   return {
     getStart: () => start,
     getMessageText: () => messageText,
+    getCategory: () => category,
     getSourceFile: () => sourceFile,
   } as unknown as Diagnostic
 }
@@ -36,6 +35,17 @@ let sourceFile: SourceFile
 beforeEach(() => {
   const project = new Project()
   sourceFile = project.createSourceFile("test.tsx", jsxCode)
+  // Set up default mocks for each function
+  vi.spyOn(utils, "stringifyDiagnosticMessage").mockImplementation(
+    (msg: any) => (typeof msg === "string" ? msg : msg.getMessageText()),
+  )
+  vi.spyOn(utils, "isJsxAttributeOrSpread").mockImplementation(() => false)
+  vi.spyOn(utils, "isJsxElementOrFragment").mockImplementation(() => false)
+  vi.spyOn(utils, "isJsxOpeningOrSelfClosing").mockImplementation(() => false)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe("JSX Errors", () => {
@@ -95,15 +105,9 @@ describe("JSX Errors", () => {
     expect(text).toBe(createCommentText(errorMessage))
   })
 
-  // FIX: Not working correctly between JSX elements
-
-  // TS2339: Property 'coach' does not exist on type 'never'.
-  //      97 |                   <dt className="text-3xl truncate font-medium text-blue-900 underline">
-  //      98 | // @ts-expect-error: Property 'coach' does not exist on type 'never'.
-  //   >  99 |                     <a href={coach.coach.meetingsUrl} target="_blank">
-  //                                               ^^^
-
   it("should generate a comment in an expression within an element correctly", () => {
+    vi.spyOn(utils, "isJsxElementOrFragment").mockImplementation(() => true)
+
     const project = new Project()
     sourceFile = project.addSourceFileAtPath(
       "./src/__mocks__/SystemTrackingRow.tsx",
@@ -173,11 +177,3 @@ it("should handle multiple diagnostics", () => {
     createCommentText("Multiple errors, uncomment to see."),
   )
 })
-
-// FIX: Issues with type declarations
-
-// TS2578: Unused '@ts-expect-error' directive.
-//     1 | import React from "react"
-//     2 | import "./profile.module.scss"
-//   > 3 | // @ts-expect-error: Cannot find module '../../../assets/img/team-2-800x800.jpg' or its corresponding type declarations.
-//       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

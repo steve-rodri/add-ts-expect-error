@@ -6,7 +6,12 @@ import {
   SyntaxKind,
 } from "ts-morph"
 
-import { stringifyDiagnosticMessage } from "./utils"
+import {
+  isJsxAttributeOrSpread,
+  isJsxElementOrFragment,
+  isJsxOpeningOrSelfClosing,
+  stringifyDiagnosticMessage,
+} from "./utils"
 
 interface ConstructorParams {
   lineNum: number
@@ -39,7 +44,7 @@ export class Comment {
 
   private getErrorDiagnostics(lineDiagnostics: Diagnostic[]) {
     return lineDiagnostics.filter(
-      (diagnostic) => diagnostic.getCategory() === DiagnosticCategory.Error,
+      (diagnostic) => diagnostic?.getCategory() === DiagnosticCategory.Error,
     )
   }
 
@@ -58,76 +63,33 @@ export class Comment {
   }
 
   private checkIfInJSX(startPosition: number): boolean {
-    const node = this.sourceFile.getDescendantAtPos(startPosition)
-    if (!node) return false
-
-    let current: Node | undefined = node
+    const startLineNum = this.getLineNumFor(startPosition)
+    let currentNode = this.sourceFile.getDescendantAtPos(startPosition)
     let inAttribute = false
-    const { line: startLine } =
-      this.sourceFile.getLineAndColumnAtPos(startPosition)
-
-    // Traverse up the AST to check if the node is within a JSX context
-    while (current) {
-      const kind = current.getKind()
-      const { line: currentLine } = this.sourceFile.getLineAndColumnAtPos(
-        current.getStart(),
-      )
-
-      // Continue traversing if within a JSX expression but not on the same line
-      if (kind === SyntaxKind.JsxExpression) {
-        if (currentLine === startLine) {
-          current = current.getParent()
-          continue
-        } else {
-          return false
-        }
+    while (currentNode) {
+      const { kind, currentLineNum } = this.getNodeInfo(currentNode)
+      if (currentLineNum === startLineNum) {
+        inAttribute ||= isJsxAttributeOrSpread(kind)
       }
-
-      // Check if the position is within the props of a JSX element and not on the same line
-      if (
-        kind === SyntaxKind.JsxAttribute ||
-        kind === SyntaxKind.JsxSpreadAttribute
-      ) {
-        if (currentLine === startLine) {
-          inAttribute = true
-          current = current.getParent()
-          continue
-        } else {
-          return false
-        }
+      if (currentLineNum !== startLineNum) {
+        if (kind === SyntaxKind.JsxExpression) return false
+        if (inAttribute && isJsxOpeningOrSelfClosing(kind)) return false
+        if (isJsxElementOrFragment(kind)) return true
       }
-
-      if (
-        inAttribute &&
-        currentLine !== startLine &&
-        (kind === SyntaxKind.JsxOpeningElement ||
-          kind === SyntaxKind.JsxSelfClosingElement)
-      ) {
-        return false
-      }
-
-      // Check if the position is within a JSX element
-      if (
-        kind === SyntaxKind.JsxElement ||
-        kind === SyntaxKind.JsxSelfClosingElement ||
-        kind === SyntaxKind.JsxFragment ||
-        kind === SyntaxKind.JsxOpeningElement ||
-        kind === SyntaxKind.JsxClosingElement ||
-        kind === SyntaxKind.JsxOpeningFragment ||
-        kind === SyntaxKind.JsxClosingFragment
-      ) {
-        if (currentLine === startLine) {
-          current = current.getParent()
-          continue
-        } else {
-          return true
-        }
-      }
-
-      current = current.getParent()
+      currentNode = currentNode.getParent()
     }
-
     return false
+  }
+
+  private getNodeInfo(node: Node) {
+    const kind = node.getKind()
+    const currentPos = node.getStart()
+    const currentLineNum = this.getLineNumFor(currentPos)
+    return { kind, currentLineNum }
+  }
+
+  private getLineNumFor(position: number): number {
+    return this.sourceFile.getLineAndColumnAtPos(position).line
   }
 
   public hasTextAndAlreadyExists(lines: string[]): boolean {
