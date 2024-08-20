@@ -22,8 +22,9 @@ export class Comment {
   private generateTextFrom(lineDiagnostics: Diagnostic[]) {
     if (lineDiagnostics.length === 0) return
     const errorMessage = this.getErrorMessage(lineDiagnostics)
-    const inJSX = this.checkIfInJSX(lineDiagnostics[0].getStart())
-    if (inJSX === undefined) return
+    const startPosition = lineDiagnostics[0].getStart()
+    if (!startPosition) return
+    const inJSX = this.checkIfInJSX(startPosition)
     return inJSX
       ? `{/* @ts-expect-error: FIX: ${errorMessage} */}`
       : `// @ts-expect-error: FIX: ${errorMessage}`
@@ -43,8 +44,7 @@ export class Comment {
       : diagnosticMessages[0]
   }
 
-  private checkIfInJSX(startPosition?: number): boolean {
-    if (startPosition === undefined) return false // Handle undefined or null startPosition properly
+  private checkIfInJSX(startPosition: number): boolean {
     const node = this.sourceFile.getDescendantAtPos(startPosition)
     if (!node) return false
 

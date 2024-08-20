@@ -2,21 +2,6 @@ import { Project, Diagnostic, SourceFile } from "ts-morph"
 import { Comment } from "./Comment"
 import { jsxCode } from "./__mocks__/jsx"
 
-// FIX: Not working correctly between JSX attributes
-
-//   664 |                 disabled={true}
-// > 665 | {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
-//       |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//   666 |                 onChange={null}
-
-// FIX: Not working correctly between JSX elements
-
-// TS2339: Property 'coach' does not exist on type 'never'.
-//      97 |                   <dt className="text-3xl truncate font-medium text-blue-900 underline">
-//      98 | // @ts-expect-error: Property 'coach' does not exist on type 'never'.
-//   >  99 |                     <a href={coach.coach.meetingsUrl} target="_blank">
-//                                               ^^^
-
 // FIX: Issues with type declarations
 
 // TS2578: Unused '@ts-expect-error' directive.
@@ -30,11 +15,15 @@ vi.mock("./utils", () => ({
     typeof msg === "string" ? msg : msg.getMessageText(),
 }))
 
-const createDiagnostic = (
-  sourceFile: SourceFile,
-  start: number,
+const createDiagnostic = ({
+  sourceFile,
+  start,
+  messageText,
+}: {
+  sourceFile: SourceFile
+  start: number
   messageText: string
-): Diagnostic => {
+}): Diagnostic => {
   return {
     getStart: () => start,
     getMessageText: () => messageText,
@@ -55,20 +44,103 @@ beforeEach(() => {
   sourceFile = project.createSourceFile("test.tsx", jsxCode)
 })
 
+// Generate a comment for a JSX --> //
+// We get: {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
+// We want: // @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'.
+
+// FIX: Not working correctly between JSX attributes
+
+//   664 |                 disabled={true}
+// > 665 | {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
+//       |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//   666 |                 onChange={null}
+
+describe("JSX Errors", () => {
+  it("should generate a comment in an attribute correctly", () => {
+    const errorMessage = "This is a JSX error message in an attribute"
+    const diagnostic = createDiagnostic({
+      sourceFile,
+      start: jsxCode.indexOf("some-class"),
+      messageText: errorMessage,
+    })
+    const comment = new Comment({
+      lineNum: 1,
+      lineDiagnostics: [diagnostic],
+      sourceFile,
+    })
+    const text = comment.getText()
+    expect(text).toBe(createCommentText(errorMessage))
+  })
+
+  it("should generate a comment in an attribute block correctly", () => {
+    const errorMessage = "This is a JSX error message in an attribute block"
+    const diagnostic = createDiagnostic({
+      sourceFile,
+      start: jsxCode.indexOf("Error"),
+      messageText: errorMessage,
+    })
+    const comment = new Comment({
+      lineNum: 2,
+      lineDiagnostics: [diagnostic],
+      sourceFile,
+    })
+    const text = comment.getText()
+    expect(text).toBe(createCommentText(errorMessage))
+  })
+
+  it("should generate a comment in an expression correctly", () => {
+    const errorMessage = "expression"
+    const diagnostic = createDiagnostic({
+      sourceFile,
+      start: jsxCode.indexOf("example"),
+      messageText: errorMessage,
+    })
+    const comment = new Comment({
+      lineNum: 9,
+      lineDiagnostics: [diagnostic],
+      sourceFile,
+    })
+    const text = comment.getText()
+    expect(text).toBe(createCommentText(errorMessage))
+  })
+
+  // FIX: Not working correctly between JSX elements
+
+  // TS2339: Property 'coach' does not exist on type 'never'.
+  //      97 |                   <dt className="text-3xl truncate font-medium text-blue-900 underline">
+  //      98 | // @ts-expect-error: Property 'coach' does not exist on type 'never'.
+  //   >  99 |                     <a href={coach.coach.meetingsUrl} target="_blank">
+  //                                               ^^^
+
+  it("should generate a comment in an expression within an element correctly", () => {
+    const errorMessage = "expression within an element"
+    const diagnostic = createDiagnostic({
+      sourceFile,
+      start: jsxCode.indexOf("true"),
+      messageText: errorMessage,
+    })
+    const comment = new Comment({
+      lineNum: 7,
+      lineDiagnostics: [diagnostic],
+      sourceFile,
+    })
+    const text = comment.getText()
+    expect(text).toBe(createJSXCommentText(errorMessage))
+  })
+})
+
 it("should generate a comment for a non-JSX error", () => {
   const errorMessage = "This is an error message"
-
-  const diagnostic = createDiagnostic(
+  const diagnostic = createDiagnostic({
     sourceFile,
-    jsxCode.indexOf("console.log"),
-    errorMessage
-  )
+    start: jsxCode.indexOf("console.log"),
+    messageText: errorMessage,
+  })
   const comment = new Comment({
     lineNum: 5,
     lineDiagnostics: [diagnostic],
     sourceFile,
   })
-
   expect(comment.getText()).toBe(createCommentText(errorMessage))
 })
 
@@ -78,114 +150,26 @@ it("should correctly identify line number", () => {
     lineDiagnostics: [],
     sourceFile,
   })
-
   expect(comment.getLineNum()).toBe(5)
 })
 
 it("should handle multiple diagnostics", () => {
-  const diagnostic1 = createDiagnostic(
+  const diagnostic1 = createDiagnostic({
     sourceFile,
-    jsxCode.indexOf("console.log"),
-    "First error message"
-  )
-  const diagnostic2 = createDiagnostic(
+    start: jsxCode.indexOf("console.log"),
+    messageText: "First error message",
+  })
+  const diagnostic2 = createDiagnostic({
     sourceFile,
-    jsxCode.indexOf("console.log") + 5,
-    "Second error message"
-  )
+    start: jsxCode.indexOf("console.log") + 5,
+    messageText: "Second error message",
+  })
   const comment = new Comment({
     lineNum: 4,
     lineDiagnostics: [diagnostic1, diagnostic2],
     sourceFile,
   })
-
   expect(comment.getText()).toBe(
-    createCommentText("Multiple errors, uncomment to see.")
+    createCommentText("Multiple errors, uncomment to see."),
   )
-})
-
-// Generate a comment for a JSX --> //
-// We get: {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
-// We want: // @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'.
-
-describe("JSX Errors", () => {
-  it("should generate a comment in an attribute correctly", () => {
-    // Arrange
-    const errorMessage = "This is a JSX error message in an attribute"
-    const index = jsxCode.indexOf("some-class")
-    const diagnostic = createDiagnostic(
-      sourceFile,
-      index,
-      errorMessage
-    )
-    const comment = new Comment({
-      lineNum: 1,
-      lineDiagnostics: [diagnostic],
-      sourceFile,
-    })
-
-    // Act
-    const text = comment.getText()
-    const result = createCommentText(errorMessage)
-
-    // Assert
-    expect(text).toBe(result)
-  })
-
-  it("should generate a comment in an attribute block correctly", () => {
-    const errorMessage = "This is a JSX error message in an attribute block"
-
-    const diagnostic = createDiagnostic(
-      sourceFile,
-      jsxCode.indexOf("Error"),
-      errorMessage
-    )
-    const comment = new Comment({
-      lineNum: 2,
-      lineDiagnostics: [diagnostic],
-      sourceFile,
-    })
-    const text = comment.getText()
-    const result = createCommentText(errorMessage)
-
-    expect(text).toBe(result)
-  })
-
-  it("should generate a comment in an expression correctly", () => {
-    const errorMessage = "expression"
-
-    const diagnostic = createDiagnostic(
-      sourceFile,
-      jsxCode.indexOf("example"),
-      errorMessage
-    )
-    const comment = new Comment({
-      lineNum: 9,
-      lineDiagnostics: [diagnostic],
-      sourceFile,
-    })
-    const text = comment.getText()
-    const result = createCommentText(errorMessage)
-
-    expect(text).toBe(result)
-  })
-
-  it("should generate a comment in an expression within an element correctly", () => {
-    const errorMessage = "expression within an element"
-
-    const diagnostic = createDiagnostic(
-      sourceFile,
-      jsxCode.indexOf("true"),
-      errorMessage
-    )
-    const comment = new Comment({
-      lineNum: 7,
-      lineDiagnostics: [diagnostic],
-      sourceFile,
-    })
-    const text = comment.getText()
-    const result = createJSXCommentText(errorMessage)
-
-    expect(text).toBe(result)
-  })
 })
