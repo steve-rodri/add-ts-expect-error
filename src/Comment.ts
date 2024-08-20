@@ -86,6 +86,7 @@ export class Comment {
 
       if (
         inAttribute &&
+        currentLine !== startLine &&
         (kind === SyntaxKind.JsxOpeningElement ||
           kind === SyntaxKind.JsxSelfClosingElement)
       ) {
