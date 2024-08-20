@@ -38,17 +38,6 @@ beforeEach(() => {
   sourceFile = project.createSourceFile("test.tsx", jsxCode)
 })
 
-// Generate a comment for a JSX --> //
-// We get: {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
-// We want: // @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'.
-
-// FIX: Not working correctly between JSX attributes
-
-//   664 |                 disabled={true}
-// > 665 | {/* @ts-expect-error: Type 'null' is not assignable to type 'ChangeEventHandler<HTMLSelectElement> | undefined'. */}
-//       |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//   666 |                 onChange={null}
-
 describe("JSX Errors", () => {
   it("should generate a comment in an attribute correctly", () => {
     const project = new Project()
@@ -115,17 +104,26 @@ describe("JSX Errors", () => {
   //                                               ^^^
 
   it("should generate a comment in an expression within an element correctly", () => {
+    const project = new Project()
+    sourceFile = project.addSourceFileAtPath(
+      "./src/__mocks__/SystemTrackingRow.tsx",
+    )
     const errorMessage = "expression within an element"
+    const sourceText = sourceFile.getFullText()
+    const start = getPosOfNthOccurrence(sourceText, "ellipsisActions", 2)
+    if (!start) return
+    const diagnosticLineNum = getLineNumberFromPosition(sourceText, start)
     const diagnostic = createDiagnostic({
       sourceFile,
-      start: jsxCode.indexOf("true"),
+      start,
       messageText: errorMessage,
     })
     const comment = new Comment({
-      lineNum: 7,
+      lineNum: diagnosticLineNum - 1,
       lineDiagnostics: [diagnostic],
       sourceFile,
     })
+
     const text = comment.getText()
     expect(text).toBe(createJSXCommentText(errorMessage))
   })
