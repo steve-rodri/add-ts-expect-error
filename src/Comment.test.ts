@@ -1,14 +1,8 @@
 import { Project, Diagnostic, SourceFile } from "ts-morph"
 import { Comment } from "./Comment"
 import { jsxCode } from "./__mocks__/jsx"
-
-// FIX: Issues with type declarations
-
-// TS2578: Unused '@ts-expect-error' directive.
-//     1 | import React from "react"
-//     2 | import "./profile.module.scss"
-//   > 3 | // @ts-expect-error: Cannot find module '../../../assets/img/team-2-800x800.jpg' or its corresponding type declarations.
-//       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+import { getPosOfNthOccurrence } from "./__mocks__/getPosOfNthOccurence"
+import { getLineNumberFromPosition } from "./__mocks__/getLineNumberFromPosition"
 
 vi.mock("./utils", () => ({
   stringifyDiagnosticMessage: (msg: any) =>
@@ -57,14 +51,22 @@ beforeEach(() => {
 
 describe("JSX Errors", () => {
   it("should generate a comment in an attribute correctly", () => {
+    const project = new Project()
+    sourceFile = project.addSourceFileAtPath(
+      "./src/__mocks__/EditYourAccount.tsx",
+    )
     const errorMessage = "This is a JSX error message in an attribute"
+    const sourceText = sourceFile.getFullText()
+    const start = getPosOfNthOccurrence(sourceText, "null", 5)
+    if (!start) return
+    const diagnosticLineNum = getLineNumberFromPosition(sourceText, start)
     const diagnostic = createDiagnostic({
       sourceFile,
-      start: jsxCode.indexOf("some-class"),
+      start,
       messageText: errorMessage,
     })
     const comment = new Comment({
-      lineNum: 1,
+      lineNum: diagnosticLineNum - 1,
       lineDiagnostics: [diagnostic],
       sourceFile,
     })
@@ -173,3 +175,11 @@ it("should handle multiple diagnostics", () => {
     createCommentText("Multiple errors, uncomment to see."),
   )
 })
+
+// FIX: Issues with type declarations
+
+// TS2578: Unused '@ts-expect-error' directive.
+//     1 | import React from "react"
+//     2 | import "./profile.module.scss"
+//   > 3 | // @ts-expect-error: Cannot find module '../../../assets/img/team-2-800x800.jpg' or its corresponding type declarations.
+//       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
