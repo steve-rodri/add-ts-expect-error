@@ -1,4 +1,10 @@
-import { Diagnostic, Node, SourceFile, SyntaxKind } from "ts-morph"
+import {
+  Diagnostic,
+  DiagnosticCategory,
+  Node,
+  SourceFile,
+  SyntaxKind,
+} from "ts-morph"
 
 import { stringifyDiagnosticMessage } from "./utils"
 
@@ -16,7 +22,8 @@ export class Comment {
   constructor({ lineNum, lineDiagnostics, sourceFile }: ConstructorParams) {
     this.sourceFile = sourceFile
     this.lineNum = lineNum
-    this.text = this.generateTextFrom(lineDiagnostics)
+    const errorDiagnostics = this.getErrorDiagnostics(lineDiagnostics)
+    this.text = this.generateTextFrom(errorDiagnostics)
   }
 
   private generateTextFrom(lineDiagnostics: Diagnostic[]) {
@@ -28,6 +35,12 @@ export class Comment {
     return inJSX
       ? `{/* @ts-expect-error: FIX: ${errorMessage} */}`
       : `// @ts-expect-error: FIX: ${errorMessage}`
+  }
+
+  private getErrorDiagnostics(lineDiagnostics: Diagnostic[]) {
+    return lineDiagnostics.filter(
+      (diagnostic) => diagnostic.getCategory() === DiagnosticCategory.Error,
+    )
   }
 
   private getDiagnosticMessagesFrom(lineDiagnostics: Diagnostic[]): string[] {
