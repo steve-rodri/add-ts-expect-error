@@ -38,8 +38,15 @@ export class FileContent {
     return Array.from(this.diagnosticsByLine.keys()).sort((a, b) => a - b)
   }
 
+  /** The leading whitespace of a line, so an inserted comment lines up with the code it annotates. */
+  private indentOf(lineNum: number): string {
+    return this.lines[lineNum]?.match(/^[ \t]*/)?.[0] ?? ""
+  }
+
   private insertComment(comment: Comment) {
-    this.lines.splice(comment.getLineNum(), 0, comment.getText())
+    const lineNum = comment.getLineNum()
+    const text = this.indentOf(lineNum) + comment.getText()
+    this.lines.splice(lineNum, 0, text)
     this.newLineAddedOffset += 1
   }
 
